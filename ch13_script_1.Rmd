@@ -45,6 +45,18 @@ Draw a regression line through this jittered data using `geom_smooth()`.
 
 Discuss whether a linear regression is appropriate for this. Is there a possibility of model predicting greater than 1 or less than 0 probability for `dvote`?
 
+```{r 1}
+# skim(nes)
+ggplot(nes, aes(x = income, y = dvote)) +
+  geom_jitter(alpha = .5, height = .4) +
+  geom_smooth(method = "lm")
+
+# linear model not appropriate because no possibility of anything greater than
+# one or less than zero
+
+```
+
+
 
 # Scene 2
 
@@ -62,6 +74,25 @@ Explain to your non-mathematical boss the relationship between income and prefer
 
 Optional (very hard!): Interpret the `estimate` for (Intercept). What does it mean? Think back to how we interpreted regression intercepts in the last two weeks. You *might* need to use the `qlogis()` function.
 
+```{r 2, echo=FALSE}
+
+model_1 <- glm(dvote ~ gender + income, family = "binomial", data = nes)
+
+model_1 %>%
+  tidy(conf.int = T) %>%
+  select(term, estimate, conf.low, conf.high)
+
+# if you are a male, then there is a decrease of .04 probability of voting
+# democrat when income is held constant for every increase in income, there is a
+# .07 probability decrease of voting democrat when gender is held constant
+# Dear non-mathy boss, if we control for gender for every increase in income category, there is a .07 decrease in probability that a person will vote democrat. 
+
+model_1 %>% mutate
+
+
+```
+
+
 
 
 
@@ -74,6 +105,31 @@ Use `augment()` from the **broom** package to get predictions from our model. Yo
 What does the `.fitted` column means?
 
 Why does `.fitted` have the same value for every male with income = 3? (First, show that this is in fact true. Then explain why?)
+
+```{r 3, echo=FALSE}
+
+model_1 %>%
+  augment(type.predict = "response", data = nes) %>%
+  select(dvote, income, gender, .fitted)
+
+```
+
+```{r challenge, echo=FALSE}
+
+nes %>% 
+  group_by(year, gender) %>% 
+  summarize(perc.dem.vote = mean(dvote)) %>% 
+  mutate(emp.logit = qlogis(perc.dem.vote)) %>% 
+  ggplot(aes(x = year, y = emp.logit)) + geom_point() + facet_wrap(~gender) +
+  ylim(-1, 0.5) + labs(title = "Trends favoring the Democrats for both Male and Female",
+                       y = "Empirical logits", x = "Year", 
+                       caption = "Source: National Election Survey") +
+  theme_classic() + geom_smooth(method = "lm") +
+  theme(plot.title = element_text(family = ""))
+
+```
+
+
 
 
 
